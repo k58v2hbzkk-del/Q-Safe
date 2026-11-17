@@ -1,13 +1,17 @@
 {
-  "name": "verity",
+  "name": "qsafe",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Verity: Confirmation of Payee and an undo window for stablecoin payments on QDay Aevum",
+  "description": "QSafe: quantum-safe tUSD8 accounts on QDay Aevum, spent only with hash-based (Winternitz) signatures",
   "scripts": {
     "live-demo": "node scripts/live-demo.mjs"
   },
   "dependencies": {
+    "esbuild": "^0.28.2",
     "viem": "^2.21.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

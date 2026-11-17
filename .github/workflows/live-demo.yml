@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       skip_deploy:
-        description: "Reuse the contracts in deployments/aevum.json"
+        description: "Reuse the QSafe contract in deployments/aevum.json"
         type: boolean
         default: false
   push:

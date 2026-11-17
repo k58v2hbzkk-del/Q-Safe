@@ -1,83 +1,97 @@
-# Verity
+# QSafe
 
-**Check who you're paying before the money moves.**
+**Stablecoin accounts a quantum computer can't drain.**
 
-Verity brings two safety features banks have and crypto doesn't to stablecoin payments on QDay Aevum:
+Every wallet today is protected by an ECDSA key. On **Q-Day**, a large enough quantum computer running Shor's algorithm can work out that key from the wallet's public key and spend everything in it.
 
-1. **Confirmation of Payee.** You pay a *name*, not just an address. If the address you pasted doesn't hold that name, the contract refuses the payment.
-2. **An undo window for new payees.** The first payment to someone sits in the contract for 10 minutes and you can cancel it. Payees you've paid before get the money instantly.
+QSafe keeps your tUSD8 in an account on QDay Aevum that can **only** be spent with a **hash-based (Winternitz) signature**, checked by the smart contract. Hash functions stay secure against quantum computers, so even an attacker who has cracked your normal wallet key can't move a single tUSD8 out.
 
-Payments can be gasless: the sender only signs, and a relayer submits.
+Built for the **Aevum Builder Challenge #1** (QDay). Track: business payment tools, with gasless payments.
 
-Built for the **Aevum Builder Challenge #1**, track **Confirmation of Payee**.
+## What you can do
 
-## The problem: address poisoning
+- **Open a QSafe account** with a quantum-safe key made on your device.
+- **Deposit without gas**: your normal wallet signs an EIP-3009 authorization, a relayer submits it.
+- **Pay anyone** from QSafe. Your device signs with a one-time hash-based key; a relayer submits, so you never need gas.
+- **Pay another QSafe account** directly: the money never leaves quantum protection.
+- **Keys rotate on every payment.** Each payment names the next key, so no key is ever used twice.
 
-Scammers create addresses that look like one you trust: same first and last characters. They send you a tiny transaction from it, so the fake address shows up in your history. The next time you copy "your friend's" address from that history, the money goes to the scammer. This has cost people millions, and nothing on-chain stops it, because to a blockchain any valid address is fine.
+## Why this matters
 
-Banks solved the same problem with Confirmation of Payee: the bank checks the name on the account before you send. Verity does that on-chain.
+| | Normal wallet | QSafe account |
+|---|---|---|
+| Spending key | ECDSA (secp256k1) | Winternitz one-time signature over keccak256 |
+| Broken by a quantum computer? | Yes (Shor's algorithm) | No: only Grover applies, and 256-bit hashes keep ~128-bit security |
+| What the attacker can do on Q-Day | Drain the wallet | Nothing. There is no ECDSA path out of the account |
 
 ## How it works
 
 ```
-             ┌───────────────────────┐
-  payee ───▶ │ VerityDirectory       │  name ⇄ address, 1 name per address,
- setName()   │ "acme.studio" → 0x25…  │  registration time, optional ERC-8004 agent link
-             └───────────┬───────────┘
-                         │ nameHashOf(to)
-             ┌───────────▼───────────┐
- sender ───▶ │ VerityPay             │  1. name check: expected name must match `to`
- send() or   │                       │  2. new payee  → held for holdPeriod (cancellable)
- signs for   │                       │     known payee → delivered instantly
- relayer     └───────────┬───────────┘  3. release() by anyone after the hold
-                         │ tUSD8
-                         ▼
-                       payee
+ your device                         relayer                    QSafe on Aevum
+ ───────────                         ───────                    ──────────────
+ master secret (stays on device)
+   │
+   ├─ one-time key k  ──▶ keyHash_k ─────────────────────────▶  open(seed, keyHash_0)
+   │
+   │  payment: to, amount, nonce k, keyHash_{k+1}
+   │  m = paymentDigest(...)
+   └─ WOTS sign(m) with key k ──▶ submits pay(...) ────────────▶  WOTS.recover(seed, m, sig) == keyHash_k ?
+                                                                 ✓ rotate to keyHash_{k+1}, nonce k+1
+                                                                 ✓ send tUSD8 (or credit another QSafe)
 ```
 
-### Contracts (`contracts/src`)
+### Winternitz one-time signatures (contracts/src/WOTS.sol)
 
-| Contract | What it does |
-|---|---|
-| `VerityDirectory.sol` | Public name directory. One lowercase name (3–32 chars, `a-z 0-9 . - _`) per address, one address per name. Records *when* a name was registered, so apps can warn about brand-new names. Can link an ERC-8004 agent identity the address owns (Aevum's identity registry at `0xF45E…36Be`). |
-| `VerityPay.sol` | The payment contract. `send` / `sendWithAuthorization` (gasless, EIP-3009), `cancel` / `cancelWithSig` (gasless cancel, EIP-712), `release`. |
+- n = 32 bytes, w = 16: the 256-bit message is split into 64 base-16 digits, plus 3 checksum digits = **67 hash chains** of length 15.
+- Each chain step is `keccak256(seed ‖ chain index ‖ step ‖ x)`, domain-separated by a per-account public seed.
+- Signing reveals position `d_i` of chain `i`; the contract walks the remaining `15 − d_i` steps and compares the result with the stored key commitment `keccak256(seed ‖ end_0 ‖ … ‖ end_66)`.
+- The checksum stops an attacker from moving any chain forward to forge a different message.
+- Verification costs about **150k gas** in a ~220k-gas payment, about **0.0002 tQDAY** at 1 gwei.
 
 ### Safety details
 
-- **The name check is enforced by the contract**, not the app. A payment with `expectedName = keccak256("acme.studio")` to any other address reverts with `NameMismatch`.
-- **A relayer can't tamper with a gasless payment.** The EIP-3009 nonce the sender signs is `keccak256(VerityPay, paymentId, to, expectedName)`. Changing the payee or dropping the name check makes the signature invalid.
-- **Only the sender can cancel**, only during the hold, and the full amount goes back.
-- **Payment ids are single-use.**
-- **No admin, no upgrade, no fees.** Nobody can move held funds except by the rules above.
+- **One-time keys are enforced on-chain.** The account stores only the current key commitment; every payment must name the next one, and the nonce moves forward. Old signatures are rejected (replay test on-chain).
+- **A relayer can't change anything.** The signed digest binds the chain id, contract, account, nonce, payee, amount and next key. Changing any of them invalidates the signature (tested).
+- **No ECDSA spending path, no admin, no upgrades, no fees.**
+- **Gasless deposits are bound to one account** through the EIP-3009 nonce `keccak256(QSafe, accountId, salt)`.
 
 ## Live on QDay Aevum testnet (chain 44005)
 
-Contract addresses, the deployed commit and every transaction hash of the live walkthrough are in **[deployments/DEMO.md](deployments/DEMO.md)** and `deployments/aevum.json`. The walkthrough shows:
+Contract address, the deployed commit and every transaction hash of the live walkthrough are in **[deployments/DEMO.md](deployments/DEMO.md)**. The walkthrough shows:
 
-1. A payee claims the name `acme.studio`
-2. A payment to a **lookalike address** labelled `acme.studio` is **blocked on-chain**
-3. A payment to the real `acme.studio` is **held**, then **cancelled** and refunded
-4. A **gasless** payment: the sender signs, a relayer submits
-5. The hold ends, the payment is **released**, and the payee becomes "known"
-6. The next payment to the known payee lands **instantly**
+1. Alice and a shop open QSafe accounts
+2. A gasless deposit of tUSD8 into Alice's QSafe
+3. Alice pays a shop wallet with a hash-based signature
+4. Alice pays the shop's QSafe: quantum-safe to quantum-safe
+5. **Q-Day attack:** someone holding the depositor's ECDSA key tries to drain the account → **rejected on-chain**
+6. **Replay attack:** an old valid signature is resubmitted → **rejected on-chain**
+7. The shop spends with its own quantum-safe key
 
 ## Run it yourself
 
-Requires [Foundry](https://getfoundry.sh) and Node 20+.
+Requires [Foundry](https://getfoundry.sh) and Node 22+.
 
 ```sh
 cd contracts
 git clone --depth 1 --branch v5.1.0 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
 git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
-forge test            # 13 tests, including fuzzing and relayer-tampering cases
+forge test     # 12 tests: rotation, replay, tampering, forged chunks (fuzzed), ECDSA-can't-withdraw, gasless deposit
 forge build
 cd .. && npm install
-DEPLOYER_KEY=0x... node scripts/live-demo.mjs   # needs ~0.1 tQDAY and 3 tUSD8 on Aevum
+DEPLOYER_KEY=0x... node scripts/live-demo.mjs   # needs ~0.2 tQDAY and 2 tUSD8 on Aevum
 ```
 
-The repo's GitHub Action does the same on every change to `deploy.txt`, using the `DEPLOYER_KEY` repository secret, and commits the results to `deployments/`.
+`app/src/wots.mjs` is the JavaScript signer (keygen + sign in ~50 ms on a laptop). It is checked against the contract in the live demo before every payment.
 
-Aevum notes: Shanghai EVM (compiled with `evm_version = "shanghai"`), legacy transactions, tUSD8 = `0x456569838f1d43009A91ebA4263147Afd7233483` (6 decimals, EIP-3009).
+The repo's GitHub Action runs the tests, deploys, runs the walkthrough and commits the results to `deployments/` whenever `deploy.txt` changes.
+
+Aevum notes: Shanghai EVM (`evm_version = "shanghai"`, via-IR), legacy transactions, tUSD8 = `0x456569838f1d43009A91ebA4263147Afd7233483` (6 decimals, EIP-3009).
+
+## Limits (honest)
+
+- A QSafe account is quantum-safe; the wallet you deposit **from** is still a normal ECDSA wallet. Move funds into QSafe before Q-Day.
+- The master secret on your device must be backed up. Lose it and the account can't be spent.
+- A signed payment that never lands must be resubmitted as-is, not re-signed differently: that would reuse a one-time key. The app does this for you.
 
 ## Credits
 

@@ -5,3 +5,4 @@ contracts/broadcast
 .env
 *.key
 contracts/lib
+app/dist

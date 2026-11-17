@@ -1,147 +1,125 @@
-// Deploys Verity to QDay Aevum testnet and runs a live, on-chain walkthrough of every feature.
+// Deploys QSafe to QDay Aevum testnet and runs a live, on-chain walkthrough.
 // Runs in GitHub Actions with the DEPLOYER_KEY secret. Writes deployments/aevum.json and
-// deployments/DEMO.md with every transaction hash, so judges can check each step on the explorer.
+// deployments/DEMO.md with every transaction hash.
 //
-//   DEPLOYER_KEY=0x... node scripts/live-demo.mjs            # deploy + demo
-//   DEPLOYER_KEY=0x... SKIP_DEPLOY=1 node scripts/live-demo.mjs  # demo again on existing contracts
+//   DEPLOYER_KEY=0x... node scripts/live-demo.mjs               # deploy + demo
+//   DEPLOYER_KEY=0x... SKIP_DEPLOY=1 node scripts/live-demo.mjs  # demo again on the deployed contract
 
 import fs from 'node:fs'
 import {
-  createPublicClient,
-  createWalletClient,
-  defineChain,
-  encodeAbiParameters,
-  formatUnits,
-  http,
-  keccak256,
-  parseEther,
-  parseUnits,
-  toBytes,
+  createPublicClient, createWalletClient, defineChain, encodeAbiParameters, formatUnits, http,
+  keccak256, parseEther, parseUnits, toBytes,
 } from 'viem'
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
+import { privateKeyToAccount } from 'viem/accounts'
+import { keyHash, sign, recover } from '../app/src/wots.mjs'
 
 const aevum = defineChain({
   id: 44005,
   name: 'QDay Aevum Testnet',
   nativeCurrency: { name: 'Test QDAY', symbol: 'tQDAY', decimals: 18 },
   rpcUrls: { default: { http: [process.env.RPC_URL ?? 'https://rpc-test.qday.info'] } },
-  blockExplorers: { default: { name: 'Aevum Explorer', url: 'https://explorer-test.qday.info' } },
 })
 const EXPLORER = 'https://explorer-test.qday.info'
 const TUSD8 = '0x456569838f1d43009A91ebA4263147Afd7233483'
-const IDENTITY_REGISTRY = '0xF45E7f39Caba1d2055f613970575a7e7069636Be'
-const HOLD_SECONDS = BigInt(process.env.HOLD_SECONDS ?? 600)
+const ZERO32 = `0x${'0'.repeat(64)}`
+const ZERO = '0x0000000000000000000000000000000000000000'
 
-const pk = process.env.DEPLOYER_KEY?.trim()
-if (!pk) throw new Error('DEPLOYER_KEY is not set')
-const deployer = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`)
+const pkRaw = process.env.DEPLOYER_KEY?.trim()
+if (!pkRaw) throw new Error('DEPLOYER_KEY is not set')
+const pk = pkRaw.startsWith('0x') ? pkRaw : `0x${pkRaw}`
+const deployer = privateKeyToAccount(pk)
 
-// Demo accounts are derived from the deployer key, so re-runs reuse the same addresses.
-const seed = keccak256(pk.startsWith('0x') ? pk : `0x${pk}`)
-const derive = (label) =>
-  privateKeyToAccount(keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'string' }], [seed, label])))
-const acme = derive('verity-demo-acme-studio') // the real payee
-const relayer = derive('verity-demo-relayer') // submits gasless payments
+// Everything for the demo is derived from the (secret) deployer key, so re-runs are deterministic
+// and the quantum secrets never appear anywhere.
+const root = keccak256(pk)
+const derive = (label) => keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'string' }], [root, label]))
+const relayer = privateKeyToAccount(derive('qsafe-demo-relayer'))
+const shopWallet = privateKeyToAccount(derive('qsafe-demo-shop-wallet')).address
+const alice = { name: 'Alice', master: derive('qsafe-alice-master'), seed: derive('qsafe-alice-seed') }
+const shop = { name: 'Corner Shop', master: derive('qsafe-shop-master'), seed: derive('qsafe-shop-seed') }
 
 const pub = createPublicClient({ chain: aevum, transport: http() })
 const wallet = (account) => createWalletClient({ account, chain: aevum, transport: http() })
-
-const artifact = (name) => JSON.parse(fs.readFileSync(`contracts/out/${name}.sol/${name}.json`, 'utf8'))
-const Directory = artifact('VerityDirectory')
-const Pay = artifact('VerityPay')
-
-const erc20 = [
-  { type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint256' }] },
-  { type: 'function', name: 'approve', stateMutability: 'nonpayable', inputs: [{ type: 'address' }, { type: 'uint256' }], outputs: [{ type: 'bool' }] },
-]
+const Q = JSON.parse(fs.readFileSync('contracts/out/QSafe.sol/QSafe.json', 'utf8'))
+const erc20 = [{ type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint256' }] }]
 
 const steps = []
 const link = (h) => `${EXPLORER}/tx/${h}`
 async function tx(label, promise) {
   const hash = await promise
   const r = await pub.waitForTransactionReceipt({ hash, timeout: 120_000 })
-  const ok = r.status === 'success'
-  steps.push({ label, hash, ok, block: Number(r.blockNumber) })
-  console.log(`${ok ? '✓' : '✗'} ${label}\n  ${link(hash)}`)
+  steps.push({ label, hash, ok: r.status === 'success', gas: r.gasUsed })
+  console.log(`${r.status === 'success' ? '✓' : '✗'} ${label} (gas ${r.gasUsed})\n  ${link(hash)}`)
+  if (r.status !== 'success') throw new Error(`${label} failed`)
   return r
 }
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const usd = (n) => parseUnits(String(n), 6)
-const nameHash = (n) => keccak256(toBytes(n))
-const newId = (tag) => keccak256(toBytes(`verity:${tag}:${Date.now()}:${Math.random()}`))
-
-/** Make an address that looks like `target` at a glance: same first 2 and last 2 hex characters. */
-function lookalike(target) {
-  const want = target.toLowerCase()
-  for (let i = 0; i < 2_000_000; i++) {
-    const key = generatePrivateKey()
-    const a = privateKeyToAccount(key).address.toLowerCase()
-    if (a.slice(2, 4) === want.slice(2, 4) && a.slice(-2) === want.slice(-2)) return privateKeyToAccount(key)
+/** An attack that must fail: sent with a fixed gas limit so the revert is recorded on-chain. */
+async function mustFail(label, args, from = relayer) {
+  try {
+    await pub.simulateContract({ account: from, address: q, abi: Q.abi, functionName: 'pay', args })
+    throw new Error(`attack unexpectedly passed: ${label}`)
+  } catch (e) {
+    if (String(e.message).startsWith('attack unexpectedly')) throw e
   }
-  throw new Error('no lookalike found')
+  const hash = await wallet(from).writeContract({ address: q, abi: Q.abi, functionName: 'pay', args, gas: 600_000n, type: 'legacy' })
+  const r = await pub.waitForTransactionReceipt({ hash })
+  steps.push({ label, hash, ok: r.status !== 'success', gas: r.gasUsed })
+  console.log(`✓ ${label} → REJECTED on-chain\n  ${link(hash)}`)
+  if (r.status === 'success') throw new Error(`attack succeeded: ${label}`)
+}
+
+const usd = (n) => parseUnits(String(n), 6)
+let q
+
+async function account(who) {
+  const first = keyHash(who.master, who.seed, 0)
+  const id = await pub.readContract({ address: q, abi: Q.abi, functionName: 'accountIdOf', args: [who.seed, first] })
+  let a = await pub.readContract({ address: q, abi: Q.abi, functionName: 'accountOf', args: [id] })
+  if (a.keyHash === ZERO32) {
+    await tx(`${who.name} opens a QSafe account (only a hash-based key can spend from it)`, wallet(relayer).writeContract({ address: q, abi: Q.abi, functionName: 'open', args: [who.seed, first], type: 'legacy' }))
+    a = await pub.readContract({ address: q, abi: Q.abi, functionName: 'accountOf', args: [id] })
+  }
+  return { ...who, id, a }
+}
+
+async function qpay(who, { to = ZERO, toAccount = ZERO32, amount }, label) {
+  const a = await pub.readContract({ address: q, abi: Q.abi, functionName: 'accountOf', args: [who.id] })
+  const k = Number(a.nonce)
+  const next = keyHash(who.master, who.seed, k + 1)
+  const m = await pub.readContract({ address: q, abi: Q.abi, functionName: 'paymentDigest', args: [who.id, a.nonce, to, toAccount, amount, next] })
+  const sig = sign(who.master, who.seed, k, m)
+  if (recover(who.seed, m, sig) !== a.keyHash) throw new Error('local signature check failed')
+  await tx(label, wallet(relayer).writeContract({ address: q, abi: Q.abi, functionName: 'pay', args: [who.id, to, toAccount, amount, next, sig], type: 'legacy' }))
+  return { m, sig, next, nonce: a.nonce }
 }
 
 async function main() {
-  console.log(`deployer ${deployer.address}`)
   const gas = await pub.getBalance({ address: deployer.address })
   const bal = await pub.readContract({ address: TUSD8, abi: erc20, functionName: 'balanceOf', args: [deployer.address] })
-  console.log(`tQDAY ${formatUnits(gas, 18)} · tUSD8 ${formatUnits(bal, 6)}`)
-  if (bal < usd(3)) throw new Error('need at least 3 tUSD8 in the deployer wallet')
+  console.log(`deployer ${deployer.address} · tQDAY ${formatUnits(gas, 18)} · tUSD8 ${formatUnits(bal, 6)}`)
+  if (bal < usd(2)) throw new Error('need at least 2 tUSD8 in the deployer wallet')
 
-  // ---------------------------------------------------------------- deploy
-  let dir, pay
   const prev = fs.existsSync('deployments/aevum.json') ? JSON.parse(fs.readFileSync('deployments/aevum.json', 'utf8')) : null
-  if (process.env.SKIP_DEPLOY && prev) {
-    ;({ VerityDirectory: dir, VerityPay: pay } = prev.contracts)
-    console.log(`using deployed contracts ${dir} ${pay}`)
+  if (process.env.SKIP_DEPLOY && prev?.contracts?.QSafe) {
+    q = prev.contracts.QSafe
+    console.log(`using QSafe ${q}`)
   } else {
-    const registryCode = await pub.getCode({ address: IDENTITY_REGISTRY })
-    const registry = registryCode && registryCode !== '0x' ? IDENTITY_REGISTRY : '0x0000000000000000000000000000000000000000'
-    const d1 = await tx('Deploy VerityDirectory', wallet(deployer).deployContract({ abi: Directory.abi, bytecode: Directory.bytecode.object, args: [registry], type: 'legacy' }))
-    dir = d1.contractAddress
-    const d2 = await tx('Deploy VerityPay', wallet(deployer).deployContract({ abi: Pay.abi, bytecode: Pay.bytecode.object, args: [TUSD8, dir, HOLD_SECONDS], type: 'legacy' }))
-    pay = d2.contractAddress
+    const d = await tx('Deploy QSafe', wallet(deployer).deployContract({ abi: Q.abi, bytecode: Q.bytecode.object, args: [TUSD8], type: 'legacy' }))
+    q = d.contractAddress
   }
-  const commit = process.env.GITHUB_SHA ?? 'local'
 
-  // ---------------------------------------------------------------- setup: names and gas for demo accounts
-  for (const a of [acme, relayer]) {
-    if ((await pub.getBalance({ address: a.address })) < parseEther('0.01')) {
-      await tx(`Fund demo account ${a.address.slice(0, 8)}… with gas`, wallet(deployer).sendTransaction({ to: a.address, value: parseEther('0.03'), type: 'legacy' }))
-    }
+  if ((await pub.getBalance({ address: relayer.address })) < parseEther('0.02')) {
+    await tx('Fund the gasless relayer with tQDAY', wallet(deployer).sendTransaction({ to: relayer.address, value: parseEther('0.1'), type: 'legacy' }))
   }
-  const acmeName = 'acme.studio'
-  const current = await pub.readContract({ address: dir, abi: Directory.abi, functionName: 'nameHashOf', args: [acme.address] })
-  if (current !== nameHash(acmeName)) {
-    await tx(`Payee claims the name "${acmeName}"`, wallet(acme).writeContract({ address: dir, abi: Directory.abi, functionName: 'setName', args: [acmeName], type: 'legacy' }))
-  }
-  await tx('Sender approves VerityPay (for non-gasless payments)', wallet(deployer).writeContract({ address: TUSD8, abi: erc20, functionName: 'approve', args: [pay, usd(100)], type: 'legacy' }))
 
-  // ---------------------------------------------------------------- 1. lookalike address is blocked
-  const mallory = lookalike(acme.address)
-  console.log(`lookalike: real ${acme.address} vs fake ${mallory.address}`)
-  let blocked = false
-  try {
-    await pub.simulateContract({ account: deployer, address: pay, abi: Pay.abi, functionName: 'send', args: [newId('poison'), mallory.address, usd(1), nameHash(acmeName)] })
-  } catch {
-    blocked = true // the contract refused the payment
-  }
-  // Also send it for real with a fixed gas limit, so the revert is visible on the explorer.
-  const poisonHash = await wallet(deployer).writeContract({ address: pay, abi: Pay.abi, functionName: 'send', args: [newId('poison'), mallory.address, usd(1), nameHash(acmeName)], gas: 200_000n, type: 'legacy' })
-  const pr = await pub.waitForTransactionReceipt({ hash: poisonHash })
-  steps.push({ label: `Payment to lookalike ${mallory.address} as "${acmeName}" → BLOCKED on-chain (NameMismatch)`, hash: poisonHash, ok: pr.status !== 'success', block: Number(pr.blockNumber) })
-  console.log(`✓ lookalike blocked (reverted as intended): ${link(poisonHash)}`)
+  const A = await account(alice)
+  const S = await account(shop)
 
-  // ---------------------------------------------------------------- 2. new payee: held, then cancelled (undo)
-  const idCancel = newId('cancel')
-  await tx(`Send 1 tUSD8 to "${acmeName}" (new payee → held ${HOLD_SECONDS}s)`, wallet(deployer).writeContract({ address: pay, abi: Pay.abi, functionName: 'send', args: [idCancel, acme.address, usd(1), nameHash(acmeName)], type: 'legacy' }))
-  await tx('Sender changes their mind → cancel (undo) → refunded', wallet(deployer).writeContract({ address: pay, abi: Pay.abi, functionName: 'cancel', args: [idCancel], type: 'legacy' }))
-
-  // ---------------------------------------------------------------- 3. gasless payment, signed by sender, submitted by relayer
-  const idGasless = newId('gasless')
-  const amount = usd(1)
+  // 1. Gasless deposit: the wallet signs EIP-3009, the relayer submits.
+  const salt = keccak256(toBytes(`deposit:${Date.now()}`))
+  const amount = usd(2)
   const validBefore = BigInt(Math.floor(Date.now() / 1000) + 3600)
-  const nonce = await pub.readContract({ address: pay, abi: Pay.abi, functionName: 'authorizationNonce', args: [idGasless, acme.address, nameHash(acmeName)] })
+  const nonce = await pub.readContract({ address: q, abi: Q.abi, functionName: 'depositNonce', args: [A.id, salt] })
   const sig = await deployer.signTypedData({
     domain: { name: 'tUSD8', version: '2', chainId: 44005, verifyingContract: TUSD8 },
     types: { ReceiveWithAuthorization: [
@@ -149,57 +127,61 @@ async function main() {
       { name: 'validAfter', type: 'uint256' }, { name: 'validBefore', type: 'uint256' }, { name: 'nonce', type: 'bytes32' },
     ] },
     primaryType: 'ReceiveWithAuthorization',
-    message: { from: deployer.address, to: pay, value: amount, validAfter: 0n, validBefore, nonce },
+    message: { from: deployer.address, to: q, value: amount, validAfter: 0n, validBefore, nonce },
   })
-  const r = `0x${sig.slice(2, 66)}`
-  const s = `0x${sig.slice(66, 130)}`
-  const v = Number(`0x${sig.slice(130, 132)}`)
-  await tx(`Gasless: sender signs, relayer submits 1 tUSD8 to "${acmeName}" (held)`, wallet(relayer).writeContract({ address: pay, abi: Pay.abi, functionName: 'sendWithAuthorization', args: [idGasless, deployer.address, acme.address, amount, nameHash(acmeName), 0n, validBefore, v, r, s], type: 'legacy' }))
+  await tx('Gasless deposit: wallet signs, relayer moves 2 tUSD8 into Alice\'s QSafe', wallet(relayer).writeContract({
+    address: q, abi: Q.abi, functionName: 'depositWithAuthorization',
+    args: [A.id, salt, deployer.address, amount, 0n, validBefore, Number(`0x${sig.slice(130, 132)}`), `0x${sig.slice(2, 66)}`, `0x${sig.slice(66, 130)}`],
+    type: 'legacy',
+  }))
 
-  // ---------------------------------------------------------------- 4. hold ends → release
-  const p = await pub.readContract({ address: pay, abi: Pay.abi, functionName: 'paymentOf', args: [idGasless] })
-  const waitS = Number(p.releaseAt) - Math.floor(Date.now() / 1000) + 5
-  if (waitS > 0) {
-    console.log(`waiting ${waitS}s for the hold to end…`)
-    await sleep(waitS * 1000)
-  }
-  await tx('Hold over → anyone releases → payee paid, now a known payee', wallet(relayer).writeContract({ address: pay, abi: Pay.abi, functionName: 'release', args: [idGasless], type: 'legacy' }))
+  // 2. Quantum-safe payment to a normal address
+  const p1 = await qpay(A, { to: shopWallet, amount: usd(1) }, 'Alice pays 1 tUSD8 to a shop wallet, signed with a Winternitz (hash-based) signature')
 
-  // ---------------------------------------------------------------- 5. known payee: instant
-  await tx(`Send 0.5 tUSD8 to known payee "${acmeName}" → delivered instantly`, wallet(deployer).writeContract({ address: pay, abi: Pay.abi, functionName: 'send', args: [newId('instant'), acme.address, usd(0.5), nameHash(acmeName)], type: 'legacy' }))
+  // 3. Quantum-safe to quantum-safe
+  await qpay(A, { toAccount: S.id, amount: usd(0.5) }, 'Alice pays 0.5 tUSD8 into the shop\'s QSafe: the money never leaves quantum protection')
 
-  // ---------------------------------------------------------------- write results
+  // 4. Attacks
+  //  a) "Q-Day": the attacker has the depositor's ECDSA private key (as a quantum computer would) and tries to drain.
+  const fake = Array.from({ length: 67 }, (_, i) => keccak256(toBytes(`forged-${i}`)))
+  await mustFail('Q-Day attack: attacker holding the ECDSA key tries to drain Alice\'s QSafe', [A.id, deployer.address, ZERO32, usd(0.5), keccak256(toBytes('attacker-key')), fake], deployer)
+  //  b) Replay of an old, valid quantum signature
+  await mustFail('Replay attack: re-submitting Alice\'s first (already used) signature', [A.id, shopWallet, ZERO32, usd(1), p1.next, p1.sig])
+
+  // 5. Shop spends with its own quantum key
+  await qpay(S, { to: shopWallet, amount: usd(0.5) }, 'Shop withdraws 0.5 tUSD8 with its own one-time quantum-safe key')
+
+  const finalA = await pub.readContract({ address: q, abi: Q.abi, functionName: 'accountOf', args: [A.id] })
   const out = {
     chainId: 44005,
     network: 'QDay Aevum Testnet',
-    deployedCommit: process.env.SKIP_DEPLOY && prev ? prev.deployedCommit : commit,
-    contracts: { VerityDirectory: dir, VerityPay: pay, tUSD8: TUSD8, identityRegistry: IDENTITY_REGISTRY },
-    holdSeconds: Number(HOLD_SECONDS),
-    demoAccounts: { sender: deployer.address, payee: acme.address, payeeName: acmeName, relayer: relayer.address, lookalike: mallory.address },
+    deployedCommit: process.env.SKIP_DEPLOY && prev ? prev.deployedCommit : process.env.GITHUB_SHA ?? 'local',
+    contracts: { QSafe: q, tUSD8: TUSD8 },
+    demo: { aliceAccount: A.id, shopAccount: S.id, shopWallet, relayer: relayer.address, aliceKeysUsed: Number(finalA.nonce) },
     lastDemo: new Date().toISOString(),
   }
   fs.mkdirSync('deployments', { recursive: true })
   fs.writeFileSync('deployments/aevum.json', JSON.stringify(out, null, 2) + '\n')
-  const rows = steps.map((x, i) => `| ${i + 1} | ${x.label} | [${x.hash.slice(0, 12)}…](${link(x.hash)}) |`).join('\n')
-  const md = `# Verity live demo on QDay Aevum testnet
+  const rows = steps.map((x, i) => `| ${i + 1} | ${x.label} | ${x.gas} | [${x.hash.slice(0, 12)}…](${link(x.hash)}) |`).join('\n')
+  const md = `# QSafe live demo on QDay Aevum testnet
 
-Run: ${out.lastDemo} · commit \`${commit}\`
+Run: ${out.lastDemo} · commit \`${process.env.GITHUB_SHA ?? 'local'}\`
 
 | Contract | Address |
 |---|---|
-| VerityDirectory | [${dir}](${EXPLORER}/address/${dir}) |
-| VerityPay | [${pay}](${EXPLORER}/address/${pay}) |
+| QSafe | [${q}](${EXPLORER}/address/${q}) |
 | tUSD8 | [${TUSD8}](${EXPLORER}/address/${TUSD8}) |
 
-Real payee \`${acme.address}\` ("${acmeName}") vs lookalike \`${mallory.address}\`
+Alice's account \`${A.id}\` · Shop's account \`${S.id}\`
 
-| # | Step | Transaction |
-|---|---|---|
+| # | Step | Gas | Transaction |
+|---|---|---|---|
 ${rows}
+
+Steps marked as attacks were sent on purpose and **reverted on-chain** (BadSignature): that is the expected result.
 `
   fs.writeFileSync('deployments/DEMO.md', md)
   console.log('\n' + md)
-  if (!blocked || pr.status === 'success') throw new Error('lookalike payment was not blocked')
 }
 
 main().catch((e) => {

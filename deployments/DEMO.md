@@ -1,26 +1,21 @@
-# Verity live demo on QDay Aevum testnet
+# QSafe live demo on QDay Aevum testnet
 
-Run: 2026-11-17T23:13:12.629Z · commit `9a581b170275e62001e11ac73249f1748d96b0ef`
+Run: 2026-11-17T23:48:39.812Z · commit `local`
 
 | Contract | Address |
 |---|---|
-| VerityDirectory | [0x4cfca7aedab62c0f13a5a2a83716d6bb43bb69ff](https://explorer-test.qday.info/address/0x4cfca7aedab62c0f13a5a2a83716d6bb43bb69ff) |
-| VerityPay | [0xdf612b06ced87dc34ac08b86d7566d41ef79fa5e](https://explorer-test.qday.info/address/0xdf612b06ced87dc34ac08b86d7566d41ef79fa5e) |
+| QSafe | [0x948b3c65b89df0b4894abe91e6d02fe579834f8f](https://explorer-test.qday.info/address/0x948b3c65b89df0b4894abe91e6d02fe579834f8f) |
 | tUSD8 | [0x456569838f1d43009A91ebA4263147Afd7233483](https://explorer-test.qday.info/address/0x456569838f1d43009A91ebA4263147Afd7233483) |
 
-Real payee `0x03902ca41d36D78dF7900B0E7393d6FeF49eE8cF` ("acme.studio") vs lookalike `0x032E42C4f4F1D0752960945592f91f04F8bb20CF`
+Alice's account `0xc7e0fad5d8d7221ba2b5b703a1f5c83ca825f56e2fc7629e0d4ce20ba540dcdd` · Shop's account `0xaf2267a6b739ae55371a9a596beea3799693f2a4b95591b09e4dee6050eead23`
 
-| # | Step | Transaction |
-|---|---|---|
-| 1 | Deploy VerityDirectory | [0xf97deb4e73…](https://explorer-test.qday.info/tx/0xf97deb4e73239f4eccd63d169e53d59c69bbc2d8ccf5d5f952768270378d82ef) |
-| 2 | Deploy VerityPay | [0x3cdfb13d54…](https://explorer-test.qday.info/tx/0x3cdfb13d54e1307fadae12a72a16b9ede132323d699d72094a7bb0d8863787e8) |
-| 3 | Fund demo account 0x03902c… with gas | [0xa25faa0c60…](https://explorer-test.qday.info/tx/0xa25faa0c60b166db29a0ec2b4983378cc8e36adf4b292a60fd7e0cdb30cabcd7) |
-| 4 | Fund demo account 0x8e80aA… with gas | [0x2ea86f84f4…](https://explorer-test.qday.info/tx/0x2ea86f84f4bacce6bdbc39769c510bdab38e5e5fb800ee494cd3b84d34c690b5) |
-| 5 | Payee claims the name "acme.studio" | [0xeed68c6817…](https://explorer-test.qday.info/tx/0xeed68c6817efe47e5822616bb1795cb4a22f7f605c7f60b850f4d45e980fea3c) |
-| 6 | Sender approves VerityPay (for non-gasless payments) | [0x9c3c09e79f…](https://explorer-test.qday.info/tx/0x9c3c09e79f28ba15b24bb6ee757971be7e324befa75deaf084fba2d236f75312) |
-| 7 | Payment to lookalike 0x032E42C4f4F1D0752960945592f91f04F8bb20CF as "acme.studio" → BLOCKED on-chain (NameMismatch) | [0x67f43fa9e0…](https://explorer-test.qday.info/tx/0x67f43fa9e0d08474188554b2f94b5414dd67f152c0800191a4c59376483c206d) |
-| 8 | Send 1 tUSD8 to "acme.studio" (new payee → held 600s) | [0xdf53371e6d…](https://explorer-test.qday.info/tx/0xdf53371e6dd79962948e5116d91c11800094e8a327d3bc171fb3308d643a51c7) |
-| 9 | Sender changes their mind → cancel (undo) → refunded | [0x2a71af21e8…](https://explorer-test.qday.info/tx/0x2a71af21e82806717c38117d73eaf6ec88c8504feaacd5ade2e14b20090b628d) |
-| 10 | Gasless: sender signs, relayer submits 1 tUSD8 to "acme.studio" (held) | [0xceedb158af…](https://explorer-test.qday.info/tx/0xceedb158af9f114fc18aca539c2adf7bb1d2c308cd6a6bea8496d0c1bb9bb50c) |
-| 11 | Hold over → anyone releases → payee paid, now a known payee | [0xbb5a3bf1f9…](https://explorer-test.qday.info/tx/0xbb5a3bf1f923f5e6169306db51b4639aa2b0c03e36cb98de5d0b8ba6cdfbf99e) |
-| 12 | Send 0.5 tUSD8 to known payee "acme.studio" → delivered instantly | [0x8a3477795d…](https://explorer-test.qday.info/tx/0x8a3477795d0856134e6740e7f75a3c878bb45fc92b598ce1aa7bcfdba3f4bb32) |
+| # | Step | Gas | Transaction |
+|---|---|---|---|
+| 1 | Gasless deposit: wallet signs, relayer moves 2 tUSD8 into Alice's QSafe | 78189 | [0x930a1869cd…](https://explorer-test.qday.info/tx/0x930a1869cdc97d78379818adb25234ddd3e431c8d6d4b77cc53534a28efd9a6d) |
+| 2 | Alice pays 1 tUSD8 to a shop wallet, signed with a Winternitz (hash-based) signature | 217681 | [0xb25ff514b2…](https://explorer-test.qday.info/tx/0xb25ff514b2279ef296ae4036ccaddea4a8d1896ff721700b907db9d563a66911) |
+| 3 | Alice pays 0.5 tUSD8 into the shop's QSafe: the money never leaves quantum protection | 205557 | [0x5e99b60ad6…](https://explorer-test.qday.info/tx/0x5e99b60ad606f1446127734a1b315edd5a3b405d35f148a5a9af3e6b3b8f7bda) |
+| 4 | Q-Day attack: attacker holding the ECDSA key tries to drain Alice's QSafe | 191031 | [0x5353c858ae…](https://explorer-test.qday.info/tx/0x5353c858aee51f7b642b2d6450bed2ca189c875bbf4e2edce55a87621b40303c) |
+| 5 | Replay attack: re-submitting Alice's first (already used) signature | 191091 | [0x51a6b70066…](https://explorer-test.qday.info/tx/0x51a6b70066bffd33b6d0427a3d842bed860c6ed1ebb2c2e49f9e627145d13a60) |
+| 6 | Shop withdraws 0.5 tUSD8 with its own one-time quantum-safe key | 209221 | [0x34dea6b8b2…](https://explorer-test.qday.info/tx/0x34dea6b8b209f691d9059b8c19f8565d4ae81c928a2009c4281e18ee80eb1e11) |
+
+Steps marked as attacks were sent on purpose and **reverted on-chain** (BadSignature): that is the expected result.
