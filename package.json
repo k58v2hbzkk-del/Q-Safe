@@ -1,0 +1,13 @@
+{
+  "name": "verity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Verity: Confirmation of Payee and an undo window for stablecoin payments on QDay Aevum",
+  "scripts": {
+    "live-demo": "node scripts/live-demo.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  }
+}

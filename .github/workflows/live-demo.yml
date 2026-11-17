@@ -1,0 +1,64 @@
+name: Test, deploy and run live demo on Aevum
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: "Reuse the contracts in deployments/aevum.json"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ["deploy.txt"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aevum-deploy
+  cancel-in-progress: false
+
+jobs:
+  live-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Fetch Solidity libraries
+        working-directory: contracts
+        run: |
+          git clone -q --depth 1 --branch v5.1.0 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
+          git clone -q --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
+
+      - name: Unit tests
+        working-directory: contracts
+        run: forge test -vv
+
+      - name: Build
+        working-directory: contracts
+        run: forge build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Deploy and run the live demo on Aevum testnet
+        env:
+          DEPLOYER_KEY: ${{ secrets.DEPLOYER_KEY }}
+          SKIP_DEPLOY: ${{ inputs.skip_deploy && '1' || '' }}
+        run: node scripts/live-demo.mjs
+
+      - name: Save deployment and transaction hashes
+        if: always()
+        run: |
+          git config user.name "verity-bot"
+          git config user.email "verity-bot@users.noreply.github.com"
+          git add deployments
+          git diff --cached --quiet || git commit -m "Live demo on Aevum: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
