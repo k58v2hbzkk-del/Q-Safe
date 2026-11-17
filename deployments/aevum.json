@@ -1,17 +1,17 @@
 {
   "chainId": 44005,
   "network": "QDay Aevum Testnet",
-  "deployedCommit": "local",
+  "deployedCommit": "cbb443fdaf3dfb90633dceb80ac654d1ac8da691",
   "contracts": {
-    "QSafe": "0x948b3c65b89df0b4894abe91e6d02fe579834f8f",
+    "QSafe": "0xc25762b7faf8a5ca3063286f441a51762240e1f7",
     "tUSD8": "0x456569838f1d43009A91ebA4263147Afd7233483"
   },
   "demo": {
-    "aliceAccount": "0xc7e0fad5d8d7221ba2b5b703a1f5c83ca825f56e2fc7629e0d4ce20ba540dcdd",
-    "shopAccount": "0xaf2267a6b739ae55371a9a596beea3799693f2a4b95591b09e4dee6050eead23",
-    "shopWallet": "0x9758C388D934D17aa4474B20990212C41FcF1463",
-    "relayer": "0x0c5883C0e8812181e831A6A40F923CF9fB14F492",
-    "aliceKeysUsed": 4
+    "aliceAccount": "0x3ab4f020488d6307e2137e1e9dc297d16d3ea5505dc6e4351c00f2c1c044cca3",
+    "shopAccount": "0x2a5e28d28934e299c25538ec0526fee082b4f45a61b6c640b579f27099705223",
+    "shopWallet": "0x0eC7698E5e8B266f269005f483fE37Ff154351fc",
+    "relayer": "0x9ef2bdB20aEF80108E68e971B16901B76C264E0f",
+    "aliceKeysUsed": 2
   },
-  "lastDemo": "2026-11-17T23:48:39.812Z"
+  "lastDemo": "2026-11-17T23:51:11.502Z"
 }
