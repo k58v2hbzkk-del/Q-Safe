@@ -1,0 +1,20 @@
+{
+  "chainId": 44005,
+  "network": "QDay Aevum Testnet",
+  "deployedCommit": "9a581b170275e62001e11ac73249f1748d96b0ef",
+  "contracts": {
+    "VerityDirectory": "0x4cfca7aedab62c0f13a5a2a83716d6bb43bb69ff",
+    "VerityPay": "0xdf612b06ced87dc34ac08b86d7566d41ef79fa5e",
+    "tUSD8": "0x456569838f1d43009A91ebA4263147Afd7233483",
+    "identityRegistry": "0xF45E7f39Caba1d2055f613970575a7e7069636Be"
+  },
+  "holdSeconds": 600,
+  "demoAccounts": {
+    "sender": "0x112c8885340a82f0DB029AA64d86a16cD36380FC",
+    "payee": "0x03902ca41d36D78dF7900B0E7393d6FeF49eE8cF",
+    "payeeName": "acme.studio",
+    "relayer": "0x8e80aA0C72717C9Fff05458c5fcef28F171c0d0b",
+    "lookalike": "0x032E42C4f4F1D0752960945592f91f04F8bb20CF"
+  },
+  "lastDemo": "2026-11-17T23:13:12.629Z"
+}
