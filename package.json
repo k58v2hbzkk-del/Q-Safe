@@ -5,10 +5,13 @@
   "type": "module",
   "description": "QSafe: quantum-safe tUSD8 accounts on QDay Aevum, spent only with hash-based (Winternitz) signatures",
   "scripts": {
-    "live-demo": "node scripts/live-demo.mjs"
+    "live-demo": "node scripts/live-demo.mjs",
+    "build": "esbuild app/src/main.mjs --bundle --minify --format=esm --target=es2022 --outfile=app/dist/app.js",
+    "start": "node app/server.mjs"
   },
   "dependencies": {
     "esbuild": "^0.28.2",
+    "three": "^0.187.0",
     "viem": "^2.21.0"
   },
   "engines": {

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100">
+<rect width="1800" height="1100" fill="#F3F2EC"/>
+<rect x="80" y="80" width="760" height="760" rx="170" fill="#0A0A0A"/>
+<rect x="80" y="80" width="760" height="760" rx="170" fill="none" stroke="#ffffff10" stroke-width="2"/>
+<g transform="translate(200 200) scale(2.1666666666666665)"><defs>
+      <linearGradient id="ga" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="ma" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#ma)" fill="url(#ga)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#ga)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#ga)"/></g>
+<rect x="900" y="80" width="820" height="360" rx="56" fill="#0A0A0A"/>
+<g transform="translate(960 160) scale(0.8333333333333334)"><defs>
+      <linearGradient id="gb" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="mb" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#mb)" fill="url(#gb)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gb)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gb)"/></g>
+<text x="1180" y="305" font-family="Inter Display" font-weight="800" font-size="128" letter-spacing="-5.8" fill="#F3F2EC">Q<tspan fill="#F3F2EC">Safe</tspan></text>
+<rect x="900" y="480" width="820" height="360" rx="56" fill="#fff"/>
+<g transform="translate(960 560) scale(0.8333333333333334)"><defs>
+      <linearGradient id="gc" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="mc" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#mc)" fill="#0A0A0A" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="#0A0A0A"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="#0A0A0A"/></g>
+<text x="1180" y="705" font-family="Inter Display" font-weight="800" font-size="128" letter-spacing="-5.8" fill="#0A0A0A">Q<tspan fill="#0A0A0A">Safe</tspan></text>
+<text x="80" y="940" font-family="Inter" font-weight="600" font-size="24" fill="#6b6a64">Small sizes</text>
+<rect x="300" y="910" width="120" height="120" rx="26.4" fill="#0A0A0A"/>
+<g transform="translate(313.2 923.2) scale(0.39)"><defs>
+      <linearGradient id="gs0" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="ms0" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#ms0)" fill="url(#gs0)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gs0)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gs0)"/></g>
+<rect x="470" y="934" width="72" height="72" rx="15.84" fill="#0A0A0A"/>
+<g transform="translate(477.92 941.92) scale(0.234)"><defs>
+      <linearGradient id="gs1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="ms1" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#ms1)" fill="url(#gs1)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gs1)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gs1)"/></g>
+<rect x="640" y="948" width="44" height="44" rx="9.68" fill="#0A0A0A"/>
+<g transform="translate(644.84 952.84) scale(0.143)"><defs>
+      <linearGradient id="gs2" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="ms2" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#ms2)" fill="url(#gs2)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gs2)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gs2)"/></g>
+<rect x="810" y="956" width="28" height="28" rx="6.16" fill="#0A0A0A"/>
+<g transform="translate(813.08 959.08) scale(0.091)"><defs>
+      <linearGradient id="gs3" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="ms3" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#ms3)" fill="url(#gs3)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gs3)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gs3)"/></g>
+<circle cx="1500" cy="970" r="90" fill="#0A0A0A"/>
+<g transform="translate(1443 914) scale(0.4791666666666667)"><defs>
+      <linearGradient id="gx" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="mx" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#mx)" fill="url(#gx)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gx)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gx)"/></g>
+<text x="1380" y="1080" font-family="Inter" font-weight="600" font-size="22" fill="#6b6a64">X / Discord avatar</text>
+</svg>

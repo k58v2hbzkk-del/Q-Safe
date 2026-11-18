@@ -81,6 +81,18 @@ cd .. && npm install
 DEPLOYER_KEY=0x... node scripts/live-demo.mjs   # needs ~0.2 tQDAY and 2 tUSD8 on Aevum
 ```
 
+### The web app
+
+```sh
+npm run build                      # bundles app/src → app/dist/app.js (three.js scene + vault)
+RELAYER_KEY=0x... npm start        # http://localhost:3000, relayer needs a little tQDAY for gas
+```
+
+- Keys are made in the browser. The server only sees key commitments and finished one-time signatures.
+- The relayer simulates every call first, is rate-limited per IP and per day, and can't alter a payment: QSafe checks the hash chains itself.
+- Deposits are gasless: the user's wallet signs an EIP-3009 `ReceiveWithAuthorization`; the relayer submits it.
+- `render.yaml` deploys it to Render (set `RELAYER_KEY` in the dashboard).
+
 `app/src/wots.mjs` is the JavaScript signer (keygen + sign in ~50 ms on a laptop). It is checked against the contract in the live demo before every payment.
 
 The repo's GitHub Action runs the tests, deploys, runs the walkthrough and commits the results to `deployments/` whenever `deploy.txt` changes.

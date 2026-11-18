@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="240" viewBox="0 0 820 240"><rect width="820" height="240" rx="48" fill="#0A0A0A"/><g transform="translate(20 20) scale(0.8333333333333334)"><defs>
+      <linearGradient id="gd" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C6FF3D"/><stop offset="1" stop-color="#8BFF7A"/>
+      </linearGradient>
+      <mask id="md" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="240">
+        <rect width="240" height="240" fill="#fff"/>
+        <g fill="#000"><g transform="translate(120 112) rotate(45)"><rect x="22" y="-27" width="134" height="54" rx="27"/><rect x="88" y="0" width="34" height="48" rx="12"/><rect x="114" y="0" width="34" height="40" rx="12"/></g></g>
+      </mask>
+    </defs><path fill-rule="evenodd" mask="url(#md)" fill="url(#gd)" d="M24 112 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 Z M64 112 a56 56 0 1 1 112 0 a56 56 0 1 1 -112 0 Z"/><g fill="url(#gd)"><g transform="translate(120 112) rotate(45)"><rect x="30" y="-17" width="118" height="34" rx="17"/><rect x="96" y="10" width="18" height="28" rx="5"/><rect x="122" y="10" width="18" height="20" rx="5"/></g></g><circle cx="120" cy="112" r="15" fill="url(#gd)"/></g><text x="240" y="165" font-family="Inter Display" font-weight="800" font-size="128" letter-spacing="-5.8" fill="#F3F2EC">Q<tspan fill="#F3F2EC">Safe</tspan></text></svg>
