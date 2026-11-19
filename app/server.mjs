@@ -138,14 +138,22 @@ const routes = {
   },
 }
 
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2', '.ico': 'image/x-icon' }
-function serveStatic(res, pathname) {
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.mp4': 'video/mp4', '.jpg': 'image/jpeg' }
+function serveStatic(req, res, pathname) {
   const rel = pathname === '/' ? 'index.html' : decodeURIComponent(pathname).replace(/^\/+/, '')
   for (const dir of STATIC) {
     const f = path.join(dir, rel)
     if (!f.startsWith(dir)) continue
     if (fs.existsSync(f) && fs.statSync(f).isFile()) {
-      res.writeHead(200, { 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream', 'cache-control': 'public, max-age=600' })
+      const size = fs.statSync(f).size
+      const range = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '')
+      if (range && path.extname(f) === '.mp4') {
+        const start = range[1] ? Number(range[1]) : 0
+        const end = range[2] ? Math.min(Number(range[2]), size - 1) : size - 1
+        res.writeHead(206, { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': end - start + 1 })
+        return fs.createReadStream(f, { start, end }).pipe(res)
+      }
+      res.writeHead(200, { 'content-length': size, 'accept-ranges': 'bytes', 'content-type': TYPES[path.extname(f)] ?? 'application/octet-stream', 'cache-control': 'public, max-age=600' })
       return fs.createReadStream(f).pipe(res)
     }
   }
@@ -158,7 +166,7 @@ http
     const url = new URL(req.url ?? '/', 'http://x')
     if (url.pathname === '/health') return void res.end('ok')
     const route = routes[`${req.method} ${url.pathname}`]
-    if (!route) return serveStatic(res, url.pathname)
+    if (!route) return serveStatic(req, res, url.pathname)
     const ip = String(req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? '').split(',')[0].trim()
     try {
       let body = {}
